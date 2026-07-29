@@ -1,0 +1,16 @@
+{
+  "name": "정석사전 (바둑 정석)",
+  "short_name": "정석사전",
+  "description": "바둑 정석 사전 — 화점·소목·삼삼·외목·고목 등 정석 변화도 탐색 (오프라인 지원)",
+  "lang": "ko",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a2535",
+  "theme_color": "#1a2535",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
