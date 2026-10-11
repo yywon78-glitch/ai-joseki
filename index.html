@@ -123,36 +123,16 @@ body.show-detail .right-panel { display:flex; }
   .mini-grid { padding:12px; gap:12px; justify-content:center; }
 }
 
-/* ── 하단 고정 바 (뒤로 / 종료) ── */
+/* ── 하단 고정 바 (뒤로) ── */
 .bottom-bar { position:fixed; left:0; right:0; bottom:0; z-index:500;
   display:flex; gap:10px; padding:9px 14px calc(env(safe-area-inset-bottom) + 9px);
   background:rgba(12,16,22,0.94); border-top:1px solid rgba(245,230,200,0.15); }
 .bb-btn { padding:13px 0; border:none; border-radius:10px; font-size:16px; font-weight:700;
   font-family:inherit; cursor:pointer; }
 .bb-back { flex:1; background:rgba(255,255,255,0.12); color:#f5e6c8; }
-.bb-exit { flex:0 0 40%; background:#8a3a33; color:#fff; }
 .bb-back:active { background:rgba(255,255,255,0.22); }
-.bb-exit:active { background:#6f2e28; }
 /* 하단 바 높이만큼 콘텐츠 영역 하단 여백 확보 */
 .left-panel, .right-panel { padding-bottom: calc(env(safe-area-inset-bottom) + 72px); }
-
-/* ── 종료 확인 모달 ── */
-.exit-modal { display:none; position:fixed; inset:0; z-index:9999;
-  background:rgba(0,0,0,0.6); align-items:center; justify-content:center;
-  padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom); }
-.exit-box { background:#223040; border:1px solid rgba(212,160,86,0.45); border-radius:16px;
-  padding:26px 24px 20px; width:100%; max-width:320px; text-align:center;
-  box-shadow:0 12px 40px rgba(0,0,0,0.5); }
-.exit-emoji { font-size:40px; margin-bottom:6px; }
-.exit-title { color:#f5e6c8; font-size:19px; font-weight:700; }
-.exit-sub { color:#a89878; font-size:13px; margin-top:6px; }
-.exit-btns { display:flex; gap:12px; margin-top:22px; }
-.exit-btn { flex:1; padding:13px 0; border:none; border-radius:10px; font-size:16px; font-weight:700;
-  font-family:inherit; cursor:pointer; }
-.exit-cancel { background:rgba(255,255,255,0.12); color:#e8eef5; }
-.exit-ok { background:#c0463c; color:#fff; }
-.exit-cancel:active { background:rgba(255,255,255,0.22); }
-.exit-ok:active { background:#a83a31; }
 </style>
 </head>
 <body>
@@ -195,20 +175,6 @@ body.show-detail .right-panel { display:flex; }
 <!-- 하단 고정 바: 뒤로 / 종료 -->
 <div class="bottom-bar">
   <button type="button" class="bb-btn bb-back" onclick="history.back()">◀ 뒤로</button>
-  <button type="button" class="bb-btn bb-exit" onclick="openExitModal()">⏻ 종료</button>
-</div>
-
-<!-- 종료 확인 모달 -->
-<div id="exit-modal" class="exit-modal" onclick="if(event.target===this)cancelExit()">
-  <div class="exit-box">
-    <div class="exit-emoji">🚪</div>
-    <div class="exit-title">앱을 종료할까요?</div>
-    <div class="exit-sub">정석사전을 닫습니다</div>
-    <div class="exit-btns">
-      <button type="button" class="exit-btn exit-cancel" onclick="cancelExit()">취소</button>
-      <button type="button" class="exit-btn exit-ok" onclick="confirmExit()">종료</button>
-    </div>
-  </div>
 </div>
 
 <script type="text/plain" id="kogo-sgf">
@@ -77881,37 +77847,20 @@ function loadSGFFile(file) {
 
 /* ══════════════════════════════════════
    안드로이드/PWA 뒤로가기(<) 버튼 처리
-   - 상세 화면: 앱 내부 뒤로가기
-   - 홈 화면: 종료 확인창 → [종료] 시에만 실제 종료
+   - 상세 화면: 앱 내부 뒤로가기(상위 변화 또는 홈)
+   - 홈 화면: 가로채지 않음 → 루트에서 OS가 앱을 종료(PWA 기본 동작)
 ══════════════════════════════════════ */
 (function() {
-    var EXIT_FLAG = false;
-    var modal = function(){ return document.getElementById('exit-modal'); };
     function pushNav(){ try { history.pushState({ nav: Date.now() }, ''); } catch(e){} }
+    window.__pushNav = pushNav;   // 정석/변화 선택(전진) 시 호출 — 뒤로가면 앱 내부로 돌아감
 
-    window.openExitModal = function(){ var m=modal(); if(m) m.style.display='flex'; };
-    // 취소/선택은 "사용자 제스처"라 여기서의 pushState는 크롬 히스토리 인터벤션에 안 걸림(핵심)
-    window.cancelExit    = function(){ var m=modal(); if(m) m.style.display='none'; pushNav(); };
-    window.confirmExit   = function(){
-        var m=modal(); if(m) m.style.display='none';
-        EXIT_FLAG = true;
-        // 설치형 PWA(홈화면 앱)는 window.close()로 창이 닫힌다 (PWA 자기종료의 유일한 수단)
-        try { window.close(); } catch(e){}
-        // 닫히지 않는 환경 대비: 히스토리를 소진시켜 맨 앞(루트)으로 → 하드웨어 <로 즉시 종료되게
-        try { history.back(); } catch(e){}
-    };
-    window.__pushNav     = pushNav;   // 정석/변화 선택(전진) 시 호출 — 제스처 기반 장전
-
-    // 뒤로가기(< 하드웨어/제스처) 가로채기 — 항상 활성
     window.addEventListener('popstate', function() {
-        if (EXIT_FLAG) { try{history.back();}catch(e){} return; }   // 종료 확정 → 통과시켜 실제 종료
         if (document.body.classList.contains('show-detail')) {
-            goBack();   // 상세 → 앱 내부 뒤로(상위 변화 또는 홈). 진입 때 제스처로 push돼 있어 재장전 불필요
-        } else {
-            openExitModal();   // 홈에서 뒤로 → 종료 확인창(재장전은 [취소]/선택 제스처에서)
+            goBack();   // 상세 → 상위 변화 또는 홈
         }
+        // 홈에서의 뒤로는 가로채지 않음 → 루트에서 하드웨어 <가 앱을 종료
     });
-    pushNav();  // 최초 센티넬 1개(로드 시점 — 홈에서의 첫 뒤로를 잡음)
+    // 센티넬 없음: 홈에선 < 로 앱이 종료됨 (PWA는 JS로 자기종료 불가, OS가 닫음)
 })();
 </script>
 <script>
