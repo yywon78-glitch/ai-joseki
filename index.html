@@ -32,19 +32,22 @@ body { background:#1a2535; display:flex; }
 
 #root-list { flex:1; overflow-y:auto; padding:6px; }
 .root-item {
-  display:flex; align-items:center; gap:8px;
-  padding:9px 10px; margin-bottom:3px;
-  border-radius:7px; cursor:pointer;
+  display:flex; align-items:center; gap:11px;
+  padding:7px 10px; margin-bottom:4px;
+  border-radius:8px; cursor:pointer;
   border:1px solid rgba(245,230,200,0.1);
   transition:all .15s;
 }
 .root-item:hover { background:rgba(212,160,86,0.12); border-color:rgba(212,160,86,0.3); }
+.root-item:hover .ri-thumb { box-shadow:0 0 0 2px rgba(212,160,86,0.6); }
 .root-item.selected { background:rgba(212,160,86,0.28); border-color:#d4a056; }
-.root-item.selected .ri-letter { background:#d4a056; color:#1a2535; }
 .root-item.selected .ri-name { color:#ffd580; }
-.ri-letter { min-width:36px; height:22px; padding:0 6px; border-radius:11px; background:rgba(255,255,255,0.1); color:#d4a056; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid rgba(212,160,86,0.3); white-space:nowrap; }
-.ri-name { font-size:14px; color:#c8d8e8; font-weight:600; flex:1; }
-.ri-count { font-size:14px; font-weight:700; color:#ffd580; background:rgba(212,160,86,0.18); border:1px solid rgba(212,160,86,0.4); border-radius:10px; padding:2px 9px; min-width:26px; text-align:center; flex-shrink:0; }
+.root-item.selected .ri-thumb { box-shadow:0 0 0 2px #d4a056; }
+/* 썸네일(미니 바둑판) */
+.ri-thumb { width:56px; height:56px; border-radius:6px; flex-shrink:0; background:#d4b56a; box-shadow:0 1px 4px rgba(0,0,0,0.3); transition:box-shadow .15s; }
+.ri-info { flex:1; min-width:0; display:flex; align-items:center; gap:8px; }
+.ri-name { font-size:15px; color:#c8d8e8; font-weight:700; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ri-count { font-size:13px; font-weight:700; color:#ffd580; background:rgba(212,160,86,0.18); border:1px solid rgba(212,160,86,0.4); border-radius:10px; padding:2px 9px; min-width:30px; text-align:center; flex-shrink:0; }
 
 /* ── 우측 패널 ── */
 .right-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
@@ -107,13 +110,15 @@ body { background:#1a2535; display:flex; }
   #btn-load, #load-status, #sgf-file { display:none !important; }   /* 내장본이라 불러오기 버튼 숨김 */
   .list-title { padding:2px 12px 4px; }
 
-  /* 정석 종류 → 가로 스크롤 칩 */
+  /* 정석 종류 → 가로 스크롤 썸네일 카드 */
   #root-list { flex:0 0 auto; display:flex; flex-direction:row; overflow-x:auto; overflow-y:hidden;
-    gap:6px; padding:6px 10px 10px; -webkit-overflow-scrolling:touch; }
-  .root-item { flex:0 0 auto; margin-bottom:0; padding:8px 10px; white-space:nowrap; }
-  .root-item .ri-name { display:none; }         /* 이름 숨기고 배지+수만 (칩 간결) */
-  .ri-letter { min-width:auto; font-size:13px; padding:2px 8px; height:24px; }
-  .ri-count { font-size:13px; padding:2px 8px; }
+    gap:8px; padding:6px 10px 10px; -webkit-overflow-scrolling:touch; }
+  .root-item { flex:0 0 auto; margin-bottom:0; padding:6px 7px 7px;
+    flex-direction:column; align-items:center; gap:4px; }
+  .ri-thumb { width:62px; height:62px; }
+  .ri-info { flex:none; width:100%; flex-direction:column; align-items:center; gap:2px; }
+  .ri-name { font-size:12px; flex:none; }
+  .ri-count { font-size:11px; padding:1px 7px; min-width:0; }
 
   /* 우측 그리드 전체폭 */
   .right-panel { flex:1 1 auto; min-height:0; }
@@ -77569,16 +77574,30 @@ function buildRootList() {
     };
     rootNode.children.forEach(function(child, idx) {
         var name = getRootItemName(child);
-        var badge = SHORT[name] || LETTERS[idx];
+        var shortName = SHORT[name] || name;
         var leafCount = countLeaves(child);
+
         var item = document.createElement('div');
         item.className = 'root-item';
-        item.innerHTML =
-            '<div class="ri-letter">' + badge + '</div>' +
-            '<div class="ri-name">' + name + '</div>' +
-            '<div class="ri-count">' + leafCount + '</div>';
+        item.title = name;
+
+        // 썸네일(미니 바둑판) — 해당 정석의 착점 자리를 보여줌
+        var thumb = document.createElement('canvas');
+        thumb.className = 'ri-thumb';
+
+        var info = document.createElement('div');
+        info.className = 'ri-info';
+        info.innerHTML =
+            '<div class="ri-name">' + shortName + '</div>' +
+            '<div class="ri-count">' + leafCount + '건</div>';
+
+        item.appendChild(thumb);
+        item.appendChild(info);
         (function(i){ item.addEventListener('click', function(){ selectRoot(i); }); })(idx);
         listEl.appendChild(item);
+
+        // DOM 부착 후 썸네일 렌더
+        try { drawMiniBoard(thumb, child); } catch(e) {}
     });
 }
 
