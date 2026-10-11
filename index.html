@@ -77892,7 +77892,14 @@ function loadSGFFile(file) {
     window.openExitModal = function(){ var m=modal(); if(m) m.style.display='flex'; };
     // 취소/선택은 "사용자 제스처"라 여기서의 pushState는 크롬 히스토리 인터벤션에 안 걸림(핵심)
     window.cancelExit    = function(){ var m=modal(); if(m) m.style.display='none'; pushNav(); };
-    window.confirmExit   = function(){ EXIT_FLAG=true; var m=modal(); if(m) m.style.display='none'; try{history.back();}catch(e){} };
+    window.confirmExit   = function(){
+        var m=modal(); if(m) m.style.display='none';
+        EXIT_FLAG = true;
+        // 설치형 PWA(홈화면 앱)는 window.close()로 창이 닫힌다 (PWA 자기종료의 유일한 수단)
+        try { window.close(); } catch(e){}
+        // 닫히지 않는 환경 대비: 히스토리를 소진시켜 맨 앞(루트)으로 → 하드웨어 <로 즉시 종료되게
+        try { history.back(); } catch(e){}
+    };
     window.__pushNav     = pushNav;   // 정석/변화 선택(전진) 시 호출 — 제스처 기반 장전
 
     // 뒤로가기(< 하드웨어/제스처) 가로채기 — 항상 활성
