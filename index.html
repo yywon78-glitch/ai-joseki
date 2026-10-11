@@ -122,6 +122,24 @@ body.show-detail .right-panel { display:flex; }
   .bc-path { font-size:13px; }
   .mini-grid { padding:12px; gap:12px; justify-content:center; }
 }
+
+/* ── 종료 확인 모달 ── */
+.exit-modal { display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,0.6); align-items:center; justify-content:center;
+  padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom); }
+.exit-box { background:#223040; border:1px solid rgba(212,160,86,0.45); border-radius:16px;
+  padding:26px 24px 20px; width:100%; max-width:320px; text-align:center;
+  box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+.exit-emoji { font-size:40px; margin-bottom:6px; }
+.exit-title { color:#f5e6c8; font-size:19px; font-weight:700; }
+.exit-sub { color:#a89878; font-size:13px; margin-top:6px; }
+.exit-btns { display:flex; gap:12px; margin-top:22px; }
+.exit-btn { flex:1; padding:13px 0; border:none; border-radius:10px; font-size:16px; font-weight:700;
+  font-family:inherit; cursor:pointer; }
+.exit-cancel { background:rgba(255,255,255,0.12); color:#e8eef5; }
+.exit-ok { background:#c0463c; color:#fff; }
+.exit-cancel:active { background:rgba(255,255,255,0.22); }
+.exit-ok:active { background:#a83a31; }
 </style>
 </head>
 <body>
@@ -160,6 +178,19 @@ body.show-detail .right-panel { display:flex; }
 </div>
 
 
+
+<!-- 종료 확인 모달 -->
+<div id="exit-modal" class="exit-modal" onclick="if(event.target===this)cancelExit()">
+  <div class="exit-box">
+    <div class="exit-emoji">🚪</div>
+    <div class="exit-title">앱을 종료할까요?</div>
+    <div class="exit-sub">정석사전을 닫습니다</div>
+    <div class="exit-btns">
+      <button type="button" class="exit-btn exit-cancel" onclick="cancelExit()">취소</button>
+      <button type="button" class="exit-btn exit-ok" onclick="confirmExit()">종료</button>
+    </div>
+  </div>
+</div>
 
 <script type="text/plain" id="kogo-sgf">
 (
@@ -77824,6 +77855,38 @@ function loadSGFFile(file) {
     } catch(e) {
         document.getElementById("mini-grid").innerHTML = "<div class=\"empty-state\"><div class=\"es-msg\">정석 데이터 로드 실패: "+e.message+"</div></div>";
     }
+})();
+
+/* ══════════════════════════════════════
+   안드로이드/PWA 뒤로가기(<) 버튼 처리
+   - 상세 화면: 앱 내부 뒤로가기
+   - 홈 화면: 종료 확인창 → [종료] 시에만 실제 종료
+══════════════════════════════════════ */
+(function() {
+    var allowExit = false;
+    function arm() { try { history.pushState({ app: true }, ''); } catch(e){} }
+    var modal = function(){ return document.getElementById('exit-modal'); };
+
+    window.openExitModal = function(){ var m=modal(); if(m) m.style.display='flex'; };
+    window.cancelExit    = function(){ var m=modal(); if(m) m.style.display='none'; };   // 이미 장전돼 있어 재장전 불필요
+    window.confirmExit   = function(){ allowExit=true; var m=modal(); if(m) m.style.display='none'; try{history.back();}catch(e){} };
+
+    // 설치형 PWA(standalone)에서만 가로채기 — 일반 브라우저 탭은 기본 동작 유지
+    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+        || window.navigator.standalone === true;
+    if (!isStandalone) return;
+
+    window.addEventListener('popstate', function() {
+        if (allowExit) { try{history.back();}catch(e){} return; }   // 종료 확정 → 통과시켜 실제 종료
+        if (document.body.classList.contains('show-detail')) {
+            goBack();   // 상세 → 앱 내부 뒤로(상위 변화 또는 홈)
+            arm();
+        } else {
+            arm();              // 홈 → 아직 종료 안 함(히스토리 재장전)
+            openExitModal();    // 종료 확인창
+        }
+    });
+    arm();  // 최초 히스토리 버퍼 장전
 })();
 </script>
 <script>

@@ -1,7 +1,7 @@
 /* 정석사전 — 서비스워커
    HTML(index.html)은 network-first: 온라인이면 항상 최신 자동 반영, 오프라인이면 캐시.
    정적 파일(아이콘 등)은 cache-first. 정석 데이터는 index.html에 내장. */
-const CACHE = 'joseki-v4';
+const CACHE = 'joseki-v5';
 const ASSETS = ['.', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {
