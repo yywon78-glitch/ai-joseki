@@ -123,6 +123,19 @@ body.show-detail .right-panel { display:flex; }
   .mini-grid { padding:12px; gap:12px; justify-content:center; }
 }
 
+/* ── 하단 고정 바 (뒤로 / 종료) ── */
+.bottom-bar { position:fixed; left:0; right:0; bottom:0; z-index:500;
+  display:flex; gap:10px; padding:9px 14px calc(env(safe-area-inset-bottom) + 9px);
+  background:rgba(12,16,22,0.94); border-top:1px solid rgba(245,230,200,0.15); }
+.bb-btn { padding:13px 0; border:none; border-radius:10px; font-size:16px; font-weight:700;
+  font-family:inherit; cursor:pointer; }
+.bb-back { flex:1; background:rgba(255,255,255,0.12); color:#f5e6c8; }
+.bb-exit { flex:0 0 40%; background:#8a3a33; color:#fff; }
+.bb-back:active { background:rgba(255,255,255,0.22); }
+.bb-exit:active { background:#6f2e28; }
+/* 하단 바 높이만큼 콘텐츠 영역 하단 여백 확보 */
+.left-panel, .right-panel { padding-bottom: calc(env(safe-area-inset-bottom) + 72px); }
+
 /* ── 종료 확인 모달 ── */
 .exit-modal { display:none; position:fixed; inset:0; z-index:9999;
   background:rgba(0,0,0,0.6); align-items:center; justify-content:center;
@@ -178,6 +191,12 @@ body.show-detail .right-panel { display:flex; }
 </div>
 
 
+
+<!-- 하단 고정 바: 뒤로 / 종료 -->
+<div class="bottom-bar">
+  <button type="button" class="bb-btn bb-back" onclick="history.back()">◀ 뒤로</button>
+  <button type="button" class="bb-btn bb-exit" onclick="openExitModal()">⏻ 종료</button>
+</div>
 
 <!-- 종료 확인 모달 -->
 <div id="exit-modal" class="exit-modal" onclick="if(event.target===this)cancelExit()">
