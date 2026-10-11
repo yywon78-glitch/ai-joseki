@@ -165,7 +165,7 @@ body.show-detail .right-panel { display:flex; }
 <!-- 우측: 미니보드 그리드 -->
 <div class="right-panel">
   <div class="breadcrumb">
-    <button class="btn-back" id="btn-back" onclick="goBack()" disabled>◀ 뒤로</button>
+    <button class="btn-back" id="btn-back" onclick="history.back()" disabled>◀ 뒤로</button>
     <div class="bc-path" id="bc-path">정석을 선택하세요</div>
     <div class="bc-depth" id="bc-depth"></div>
   </div>
@@ -77651,6 +77651,7 @@ function selectRoot(idx) {
     showChildren(child, getRootItemName(child));
     document.body.classList.add('show-detail');            // 홈 → 상세 화면 전환
     document.getElementById('mini-grid').scrollTop = 0;
+    if (window.__pushNav) window.__pushNav();              // 전진 네비(제스처) → 히스토리 장전
 }
 
 /* ══════════════════════════════════════
@@ -77727,6 +77728,7 @@ function showChildren(node, pathLabel) {
                 incSelCount(c);
                 navStack.push({ node: node, path: bcPath.textContent });
                 showChildren(c, bcPath.textContent + ' › ' + lbl);
+                if (window.__pushNav) window.__pushNav();   // 전진 네비(제스처) → 히스토리 장전
             });
         })(child, LETTERS[idx] + ' ' + moveStr);
 
@@ -77792,6 +77794,7 @@ document.addEventListener('keydown', function(e) {
             incSelCount(child);
             navStack.push({ node: currentNode, path: document.getElementById('bc-path').textContent });
             showChildren(child, document.getElementById('bc-path').textContent + ' › ' + LETTERS[i] + ' ' + getMoveLabel(child));
+            if (window.__pushNav) window.__pushNav();   // 전진 네비(키보드 제스처) → 히스토리 장전
         }
     }
 });
@@ -77863,27 +77866,26 @@ function loadSGFFile(file) {
    - 홈 화면: 종료 확인창 → [종료] 시에만 실제 종료
 ══════════════════════════════════════ */
 (function() {
-    var allowExit = false;
-    function arm() { try { history.pushState({ app: true }, ''); } catch(e){} }
+    var EXIT_FLAG = false;
     var modal = function(){ return document.getElementById('exit-modal'); };
+    function pushNav(){ try { history.pushState({ nav: Date.now() }, ''); } catch(e){} }
 
     window.openExitModal = function(){ var m=modal(); if(m) m.style.display='flex'; };
-    window.cancelExit    = function(){ var m=modal(); if(m) m.style.display='none'; };   // 이미 장전돼 있어 재장전 불필요
-    window.confirmExit   = function(){ allowExit=true; var m=modal(); if(m) m.style.display='none'; try{history.back();}catch(e){} };
+    // 취소/선택은 "사용자 제스처"라 여기서의 pushState는 크롬 히스토리 인터벤션에 안 걸림(핵심)
+    window.cancelExit    = function(){ var m=modal(); if(m) m.style.display='none'; pushNav(); };
+    window.confirmExit   = function(){ EXIT_FLAG=true; var m=modal(); if(m) m.style.display='none'; try{history.back();}catch(e){} };
+    window.__pushNav     = pushNav;   // 정석/변화 선택(전진) 시 호출 — 제스처 기반 장전
 
-    // display-mode 감지가 기기마다 달라 종료되는 문제가 있어, 항상 가로채도록 함
-    // (일반 브라우저 탭에서도 < 누르면 종료확인창 → [취소]로 유지 가능)
+    // 뒤로가기(< 하드웨어/제스처) 가로채기 — 항상 활성
     window.addEventListener('popstate', function() {
-        if (allowExit) { try{history.back();}catch(e){} return; }   // 종료 확정 → 통과시켜 실제 종료
+        if (EXIT_FLAG) { try{history.back();}catch(e){} return; }   // 종료 확정 → 통과시켜 실제 종료
         if (document.body.classList.contains('show-detail')) {
-            goBack();   // 상세 → 앱 내부 뒤로(상위 변화 또는 홈)
-            arm();
+            goBack();   // 상세 → 앱 내부 뒤로(상위 변화 또는 홈). 진입 때 제스처로 push돼 있어 재장전 불필요
         } else {
-            arm();              // 홈 → 아직 종료 안 함(히스토리 재장전)
-            openExitModal();    // 종료 확인창
+            openExitModal();   // 홈에서 뒤로 → 종료 확인창(재장전은 [취소]/선택 제스처에서)
         }
     });
-    arm();  // 최초 히스토리 버퍼 장전
+    pushNav();  // 최초 센티넬 1개(로드 시점 — 홈에서의 첫 뒤로를 잡음)
 })();
 </script>
 <script>
