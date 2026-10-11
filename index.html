@@ -77871,11 +77871,8 @@ function loadSGFFile(file) {
     window.cancelExit    = function(){ var m=modal(); if(m) m.style.display='none'; };   // 이미 장전돼 있어 재장전 불필요
     window.confirmExit   = function(){ allowExit=true; var m=modal(); if(m) m.style.display='none'; try{history.back();}catch(e){} };
 
-    // 설치형 PWA(standalone)에서만 가로채기 — 일반 브라우저 탭은 기본 동작 유지
-    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-        || window.navigator.standalone === true;
-    if (!isStandalone) return;
-
+    // display-mode 감지가 기기마다 달라 종료되는 문제가 있어, 항상 가로채도록 함
+    // (일반 브라우저 탭에서도 < 누르면 종료확인창 → [취소]로 유지 가능)
     window.addEventListener('popstate', function() {
         if (allowExit) { try{history.back();}catch(e){} return; }   // 종료 확정 → 통과시켜 실제 종료
         if (document.body.classList.contains('show-detail')) {
